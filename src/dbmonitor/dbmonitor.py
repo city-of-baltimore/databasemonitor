@@ -91,7 +91,7 @@ class DBMonitor:
             context = ssl.create_default_context()
             server: Union[smtplib.SMTP, smtplib.SMTP_SSL] = smtplib.SMTP_SSL(self.smtp_server, 465, context=context)
         else:
-            server = smtplib.SMTP(self.smtp_server, 110)
+            server = smtplib.SMTP(self.smtp_server, 25)
 
         if self.email_user and self.email_pass:
             server.login(self.email_user, self.email_pass)
