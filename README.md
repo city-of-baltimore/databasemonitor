@@ -16,6 +16,10 @@ To run:
 
        python -m pip install -r requirements.txt
 
+   Also, install databasemonitor
+
+       python setup.py install 
+
 4. Adjust the main.py script to refer to the databases you want to monitor. The `config` variable is a list of dictionaries with the following values:
 
          table_name - name of the table to check

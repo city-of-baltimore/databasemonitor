@@ -84,7 +84,9 @@ class DBMonitor:
         context = ssl.create_default_context()
 
         with smtplib.SMTP_SSL(self.smtp_server, 465, context=context) as server:
-            server.login(self.email_user, self.email_pass)
+            if self.email_user and self.email_pass:
+                server.login(self.email_user, self.email_pass)
+
             for addr in recipient_addresses:
                 server.sendmail(self.email_user, addr,
                                 "Subject: Database dataflow failure: {table}\n\nDataflow failure in DOT_DATA.{table}. "
