@@ -1,0 +1,74 @@
+"""Main driver code for dbmonitor"""
+import argparse
+from typing import List
+
+from dbmonitor import ConfigType, DBMonitor
+
+config: List[ConfigType] = [
+    {
+        'table_name': 'acrs_crash',
+        'date_col': 'ACRSREPORTTIMESTAMP',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 1440  # 24 hours
+    },
+    {
+        'table_name': 'atves_amber_time_rejects',
+        'date_col': 'violation_date',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 1440  # 24 hours
+    },
+    {
+        'table_name': 'ccc_bus_runtimes',
+        'date_col': 'starttime',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 720  # 12 hours
+    },
+    {
+        'table_name': 'ccc_arrival_times',
+        'date_col': 'date',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 15
+    },
+    {
+        'table_name': 'atves_approval_by_review_date_details',
+        'date_col': 'review_datetime',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 2880  # 48 hours
+    },
+    {
+        'table_name': 'atves_by_location',
+        'date_col': 'date',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 1440  # 24 hours
+    },
+    {
+        'table_name': 'atves_traffic_counts',
+        'date_col': 'date',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 1440  # 24 hours
+    },
+    {
+        'table_name': 'ticketstat',
+        'date_col': 'Export_Date',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 1440  # 24 hours
+    },
+    {
+        'table_name': 'towstat_agebydate',
+        'date_col': 'date',
+        'email': 'brian.seel@baltimorecity.gov',
+        'notification_mins': 1440  # 24 hours
+    },
+]
+
+parser = argparse.ArgumentParser(description='Monitors databases and sends a notification email if there have not been '
+                                             'recent enough updates')
+parser.add_argument('-e', '--email_address', help='Email address to send emails from (gmail only)')
+parser.add_argument('-p', '--email_password', help='Email password for the --emailaddress')
+parser.add_argument('-s', '--smtp_server', help='The SMTP server to use for sending notification emails')
+parser.add_argument('-c', '--conn_str', help='Custom database connection string')
+
+args = parser.parse_args()
+
+cls = DBMonitor(args.conn_str, args.emailaddress, args.emailpassword, args.smtpserver)
+cls.check(config)
