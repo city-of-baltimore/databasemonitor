@@ -93,7 +93,7 @@ class DBMonitor:
         else:
             server = smtplib.SMTP(self.smtp_server, 25)
 
-        if self.email_user and self.email_pass:
+        if self.email_pass:
             server.login(self.email_user, self.email_pass)
 
         for addr in recipient_addresses:
