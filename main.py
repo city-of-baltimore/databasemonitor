@@ -67,7 +67,7 @@ parser.add_argument('-e', '--email_address', help='Email address to use to authe
 parser.add_argument('-p', '--email_password',
                     help='Email password for the --emailaddress. If not provided, then the SMTP server wont be given '
                          'creds')
-parser.add_argument('-s', '--smtp_server', help='The SMTP server to use for sending notification emails')
+parser.add_argument('-m', '--smtp_server', help='The SMTP server to use for sending notification emails')
 parser.add_argument('-c', '--conn_str', help='Custom database connection string')
 parser.add_argument('-s', '--secure', action='store_true', help='Use SMTPS instead of SMTP')
 
