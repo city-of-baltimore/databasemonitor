@@ -73,5 +73,5 @@ parser.add_argument('-s', '--secure', action='store_true', help='Use SMTPS inste
 
 args = parser.parse_args()
 
-cls = DBMonitor(args.conn_str, args.email_address, args.email_password, args.smtp_server)
+cls = DBMonitor(args.conn_str, args.email_address, args.email_password, args.smtp_server, args.secure)
 cls.check(config)
