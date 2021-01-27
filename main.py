@@ -63,12 +63,15 @@ config: List[ConfigType] = [
 
 parser = argparse.ArgumentParser(description='Monitors databases and sends a notification email if there have not been '
                                              'recent enough updates')
-parser.add_argument('-e', '--email_address', help='Email address to send emails from (gmail only)')
-parser.add_argument('-p', '--email_password', help='Email password for the --emailaddress')
+parser.add_argument('-e', '--email_address', help='Email address to use to authenticate to the SMTP server.')
+parser.add_argument('-p', '--email_password',
+                    help='Email password for the --emailaddress. If not provided, then the SMTP server wont be given '
+                         'creds')
 parser.add_argument('-s', '--smtp_server', help='The SMTP server to use for sending notification emails')
 parser.add_argument('-c', '--conn_str', help='Custom database connection string')
+parser.add_argument('-s', '--secure', action='store_true', help='Use SMTPS instead of SMTP')
 
 args = parser.parse_args()
 
-cls = DBMonitor(args.conn_str, args.emailaddress, args.emailpassword, args.smtpserver)
+cls = DBMonitor(args.conn_str, args.email_address, args.email_password, args.smtp_server)
 cls.check(config)

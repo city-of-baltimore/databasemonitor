@@ -3,7 +3,7 @@ import logging
 import smtplib
 import ssl
 from datetime import datetime, timedelta
-from typing import List, TypedDict
+from typing import List, TypedDict, Union
 
 from sqlalchemy import create_engine, select, Column, DateTime, MetaData, Table  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
@@ -25,16 +25,20 @@ class DBMonitor:
     scheduler to repeatedly check for updates
     """
 
-    def __init__(self, conn_str: str, email_user: str, email_pass: str, smtp_server: str = "smtp.gmail.com"):
+    def __init__(self, conn_str: str, email_user: str, email_pass: str,  # pylint:disable=too-many-arguments
+                 smtp_server: str = "smtp.gmail.com", smtp_secure: bool = True):
         """
         :param conn_str: SqlAlchemy connection string
         :param email_user: Username for SMTP server
         :param email_pass: Password for SMTP server
+        :param smtp_server: SMTP server to use for sending email
+        :param smtp_secure: If true, use SMTPS for smtp_server. Otherwise, use SMTP.
         """
         self.engine = create_engine(conn_str, echo=True, future=True)
         self.email_user = email_user
         self.email_pass = email_pass
         self.smtp_server = smtp_server
+        self.smtp_secure = smtp_secure
 
     def check(self, configs: List[ConfigType]) -> None:
         """
@@ -57,7 +61,8 @@ class DBMonitor:
                 if len(result) == 0:
                     self.send_notification([config['email']],
                                            config['table_name'],
-                                           config['notification_mins'])
+                                           config['notification_mins'],
+                                           self.smtp_secure)
 
     def table_generator(self, table_name: str, col_name: str) -> Table:
         """
@@ -71,24 +76,29 @@ class DBMonitor:
                      metadata,
                      Column(col_name, DateTime))
 
-    def send_notification(self, recipient_addresses: List[str], table_name: str, notification_mins: int) -> None:
+    def send_notification(self, recipient_addresses: List[str], table_name: str, notification_mins: int,
+                          secure: bool) -> None:
         """
         Sends a notification to the included email address
         :param recipient_addresses: List of email addresses to send the notification to
         :param table_name: Table that we were checking. This is only used for the email text.
         :param notification_mins: Number of minutes since we expected the last entry. This is only used for the email
         text
-        :return:
+        :param secure: If true, use SMTPS (465). Otherwise use SMTP (port 25).
         """
-        # Create a secure SSL context
-        context = ssl.create_default_context()
+        if secure:
+            # Create a secure SSL context
+            context = ssl.create_default_context()
+            server: Union[smtplib.SMTP, smtplib.SMTP_SSL] = smtplib.SMTP_SSL(self.smtp_server, 465, context=context)
+        else:
+            server = smtplib.SMTP(self.smtp_server, 110)
 
-        with smtplib.SMTP_SSL(self.smtp_server, 465, context=context) as server:
-            if self.email_user and self.email_pass:
-                server.login(self.email_user, self.email_pass)
+        if self.email_user and self.email_pass:
+            server.login(self.email_user, self.email_pass)
 
-            for addr in recipient_addresses:
-                server.sendmail(self.email_user, addr,
-                                "Subject: Database dataflow failure: {table}\n\nDataflow failure in DOT_DATA.{table}. "
-                                "No data in last {ns} seconds, which was unexpected".format(
-                                    table=table_name, ns=notification_mins))
+        for addr in recipient_addresses:
+            server.sendmail(self.email_user, addr,
+                            "Subject: Database dataflow failure: {table}\n\nDataflow failure in DOT_DATA.{table}. "
+                            "No data in last {ns} seconds, which was unexpected".format(
+                                table=table_name, ns=notification_mins))
+        server.close()

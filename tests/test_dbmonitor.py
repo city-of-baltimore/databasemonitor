@@ -3,6 +3,8 @@ import poplib
 import uuid
 from email import parser
 
+import pytest
+
 from dbmonitor import DBMonitor
 
 
@@ -34,13 +36,14 @@ def test_check_db_failure(test_db, email_username, email_password, notification_
     cls.check(configs=table_config)
 
 
-def test_send_notification(email_username, email_password, smtp_server, pop_server, notification_window):
-    """Sends a test notification and checks the test email account for the notification"""
+def send_notification(email_username, email_password, smtp_server, pop_server,  # pylint:disable=too-many-arguments
+                      notification_window, secure: bool):
+    """Helper for test_send_notification_secure and test_send_notification_unsecure"""
     cls = DBMonitor('sqlite://', email_username, email_password, smtp_server)
 
     # send a unique id so we make sure we get the right email
     unique_id = str(uuid.uuid4())
-    cls.send_notification([email_username], unique_id, notification_window)
+    cls.send_notification([email_username], unique_id, notification_window, secure)
 
     pop_conn = poplib.POP3_SSL(pop_server)
     pop_conn.user(email_username)
@@ -57,3 +60,14 @@ def test_send_notification(email_username, email_password, smtp_server, pop_serv
         exp_subj, messages[-1]['subject']
     )
     pop_conn.quit()
+
+
+def test_send_notification_secure(email_username, email_password, smtp_server, pop_server, notification_window):
+    """Sends a test notification and checks the test email account for the notification using SMTPS"""
+    send_notification(email_username, email_password, smtp_server, pop_server, notification_window, True)
+
+
+@pytest.mark.skip(reason="Gmail doesn't support unsecure protocols")
+def test_send_notification_unsecure(email_username, email_password, smtp_server, pop_server, notification_window):
+    """Sends a test notification and checks the test email account for the notification using SMTP"""
+    send_notification(email_username, email_password, smtp_server, pop_server, notification_window, False)
