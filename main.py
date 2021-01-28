@@ -29,12 +29,12 @@ config: List[ConfigType] = [
         'notification_mins': 720  # 12 hours
     },
 
-    # dataflow runs from 6:30am-12:30am every 1 minute
+    # dataflow runs daily at 12am +4 hours
     {
         'table_name': 'ccc_arrival_times',
         'date_col': 'date',
         'email': 'brian.seel@baltimorecity.gov',
-        'notification_mins': 15
+        'notification_mins': 2880  # 48 hours
     },
 
     # dataflow runs daily at 12am +4 hours
