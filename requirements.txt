@@ -1,0 +1,3 @@
+git+https://github.com/sqlalchemy/sqlalchemy.git@rel_1_4_0b1#egg=sqlalchemy
+
+pyodbc~=4.0.30
