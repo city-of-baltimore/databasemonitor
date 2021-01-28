@@ -55,7 +55,7 @@ class DBMonitor:
                 table = self.table_generator(config['table_name'], config['date_col'])
 
                 stmt = select(table).where(table.columns[config['date_col']] >=  # pylint:disable=unsubscriptable-object
-                                           (datetime.now() - timedelta(seconds=config['notification_mins'])))
+                                           (datetime.now() - timedelta(minutes=config['notification_mins'])))
                 result = session.execute(stmt).fetchall()
 
                 if len(result) == 0:
@@ -99,6 +99,6 @@ class DBMonitor:
         for addr in recipient_addresses:
             server.sendmail(self.email_user, addr,
                             "Subject: Database dataflow failure: {table}\n\nDataflow failure in DOT_DATA.{table}. "
-                            "No data in last {ns} seconds, which was unexpected".format(
+                            "No data in last {ns} minutes, which was unexpected".format(
                                 table=table_name, ns=notification_mins))
         server.close()
