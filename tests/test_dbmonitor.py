@@ -71,3 +71,9 @@ def test_send_notification_secure(email_username, email_password, smtp_server, p
 def test_send_notification_unsecure(email_username, email_password, smtp_server, pop_server, notification_window):
     """Sends a test notification and checks the test email account for the notification using SMTP"""
     send_notification(email_username, email_password, smtp_server, pop_server, notification_window, False)
+
+
+def test_check_required_arguments(test_db):
+    """Tests that an exception is thrown when missing arguments are missing"""
+    with pytest.raises(ValueError):
+        DBMonitor(conn_str=test_db, email_user=None, email_pass=None, smtp_server=None)

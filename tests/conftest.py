@@ -28,8 +28,9 @@ class TestTableFail(Base):  # pylint:disable=too-few-public-methods
 
 def pytest_addoption(parser):
     """Adds command line options"""
-    parser.addoption('--email_username', action='store')
-    parser.addoption('--email_password', action='store')
+    # this account is only used for testing, so hard coding creds is fine
+    parser.addoption('--email_username', default='bcdotnotifications@gmail.com', action='store')
+    parser.addoption('--email_password', default='eV^5d97%', action='store')
     parser.addoption('--pop_server', default='pop.gmail.com', action='store')
     parser.addoption('--smtp_server', default='smtp.gmail.com', action='store')
 
@@ -61,7 +62,7 @@ def pop_server_fixture(request):
 @pytest.fixture(name='notification_window')
 def notification_window_fixture():
     """Constant used as the notification_mins value in tests"""
-    return 300
+    return 30000
 
 
 @pytest.fixture()
@@ -77,11 +78,11 @@ def test_db(notification_window):
         with Session(bind=engine, future=True) as session:
             for i in range(10):
                 # add data for passing test
-                session.add(TestTableGood(DATETIME=datetime.now() - timedelta(seconds=60 * i)))
+                session.add(TestTableGood(DATETIME=datetime.now() - timedelta(minutes=240 + (60 * i))))
 
             for i in range(10):
                 # add data for failing test
-                session.add(TestTableFail(DATETIME=datetime.now() - timedelta(seconds=notification_window + (60 * i))))
+                session.add(TestTableFail(DATETIME=datetime.now() - timedelta(minutes=notification_window + (60 * i))))
 
             session.commit()
 

@@ -40,6 +40,9 @@ class DBMonitor:
         self.smtp_server = smtp_server
         self.smtp_secure = smtp_secure
 
+        if not self.email_user or not self.smtp_server:
+            raise ValueError("Email address and SMTP server are required arguments")
+
     def check(self, configs: List[ConfigType]) -> None:
         """
 
