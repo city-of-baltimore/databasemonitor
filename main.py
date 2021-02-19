@@ -64,7 +64,7 @@ config: List[ConfigType] = [
     # dataflow runs daily at 12am +4 hours
     {
         'table_name': 'ticketstat',
-        'date_col': 'Export_Date',
+        'date_col': 'Infraction_Datetime',
         'email': 'brian.seel@baltimorecity.gov',
         'notification_mins': 2880  # 48 hours
     },
