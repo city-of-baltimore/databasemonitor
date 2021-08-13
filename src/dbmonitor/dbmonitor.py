@@ -11,7 +11,7 @@ from typing import List, TypedDict, Union
 
 from loguru import logger
 from sqlalchemy import create_engine, select, Column, DateTime, MetaData, Table  # type: ignore
-from sqlalchemy.exc import OperationalError  # type: ignore
+from sqlalchemy.exc import OperationalError, ProgrammingError  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 
@@ -65,7 +65,7 @@ class DBMonitor:
                                            (datetime.now() - timedelta(minutes=config['notification_mins'])))
                 try:
                     result = session.execute(stmt).fetchall()
-                except OperationalError:
+                except (OperationalError, ProgrammingError):
                     # for no such table error
                     logger.exception("Error")
                     result = []
