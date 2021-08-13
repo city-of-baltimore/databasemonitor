@@ -1,14 +1,18 @@
 """Database monitoring tool that notifies when there are not expected new entries"""
-import logging
+import argparse
+import importlib.util
 import smtplib
 import ssl
+import sys
 from datetime import datetime, timedelta
+from importlib.abc import Loader
+from pathlib import Path
 from typing import List, TypedDict, Union
 
+from loguru import logger
 from sqlalchemy import create_engine, select, Column, DateTime, MetaData, Table  # type: ignore
+from sqlalchemy.exc import OperationalError  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
-
-LOGGER = logging.getLogger(__name__)
 
 
 class ConfigType(TypedDict):  # pylint:disable=too-few-public-methods, inherit-non-class
@@ -57,9 +61,14 @@ class DBMonitor:
             with Session(self.engine) as session:
                 table = self.table_generator(config['table_name'], config['date_col'])
 
-                stmt = select(table).where(table.columns[config['date_col']] >=  # pylint:disable=unsubscriptable-object
+                stmt = select(table).where(table.columns[config['date_col']] >=
                                            (datetime.now() - timedelta(minutes=config['notification_mins'])))
-                result = session.execute(stmt).fetchall()
+                try:
+                    result = session.execute(stmt).fetchall()
+                except OperationalError:
+                    # for no such table error
+                    logger.exception("Error")
+                    result = []
 
                 if len(result) == 0:
                     self.send_notification([config['email']],
@@ -105,3 +114,83 @@ class DBMonitor:
                             "No data in last {ns} minutes, which was unexpected".format(
                                 table=table_name, ns=notification_mins))
         server.close()
+
+
+def setup_logging(debug=False, info=False, path: Path = None):
+    """
+    Configures the logging level, and sets up file based logging. By default, the following logging levels are enabled:
+    fatal, error, and warn. This optionally enables info and debug.
+
+    :param debug: If true, the Debug logging level is used, and verbose is ignored
+    :param info: If true and debug is false, then the info log level is used
+    :param path: Base path where the logs folder should go. If not specified, then it uses the current dir
+    """
+    # Setup logging
+    log_level = 'WARNING'
+    if debug:
+        log_level = 'DEBUG'
+    elif info:
+        log_level = 'INFO'
+
+    if path:
+        log_path = path / 'logs' / 'file-{time}.log'
+    else:
+        log_path = Path('logs') / 'file-{time}.log'
+
+    handlers = [
+        {'sink': sys.stdout, 'format': '{time} - {message}', 'colorize': True, 'backtrace': True, 'diagnose': True,
+         'level': log_level},
+        {'sink': log_path, 'serialize': True, 'backtrace': True,
+         'diagnose': True, 'rotation': '1 week', 'retention': '3 months', 'compression': 'zip', 'level': log_level},
+    ]
+
+    logger.configure(handlers=handlers)
+
+
+def setup_parser(help_str="Driver for the transitstat scripts"):
+    """Factory that creates the base argument parser"""
+    parser = argparse.ArgumentParser(description=help_str)
+    parser.add_argument('-v', '--verbose', action='store_true', help='Increased logging level')
+    parser.add_argument('-vv', '--debug', action='store_true', help='Print debug statements')
+    parser.add_argument('-c', '--conn_str', help='Database connection string',
+                        default='mssql+pyodbc://balt-sql311-prd/DOT_DATA?driver=ODBC Driver 17 for SQL Server')
+
+    return parser
+
+
+def parse_args(_args):
+    """Handles argument parsing"""
+    parser = setup_parser('Monitors databases and sends a notification email if there have not been '
+                          'recent enough updates')
+
+    parser.add_argument('-e', '--email_address', required=True,
+                        help='Email address to use to authenticate to the SMTP server and the source email address of '
+                             'notification emails.')
+    parser.add_argument('-p', '--email_password',
+                        help='Email password for the --emailaddress. If not provided, then the SMTP server wont be '
+                             'given creds')
+    parser.add_argument('-m', '--smtp_server', required=True,
+                        help='The SMTP server to use for sending notification emails')
+    parser.add_argument('-s', '--secure', action='store_true', help='Use SMTPS instead of SMTP')
+    parser.add_argument('-o', '--config', required=True, help='Config file with the dictionary of databases to check. '
+                                                              'see config.py in the root for an example')
+
+    return parser.parse_args(_args)
+
+
+if __name__ == '__main__':
+    args = parse_args(sys.argv[1:])
+
+    setup_logging(args.debug, args.verbose)
+
+    cls = DBMonitor(args.conn_str, args.email_address, args.email_password, args.smtp_server, args.secure)
+
+    spec = importlib.util.spec_from_file_location('module', args.config)
+    if not spec or not spec.loader:
+        logger.error('--config argument not set')
+    else:
+        if not isinstance(spec.loader, Loader):
+            raise AssertionError('Expected spec to be a Loader type')
+        cnfg = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cnfg)
+        cls.check(cnfg.config)  # type: ignore

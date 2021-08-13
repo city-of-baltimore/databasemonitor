@@ -13,5 +13,6 @@ setup(
     package_dir={'': 'src'},
     install_requires=[
         'sqlalchemy',
+        'loguru',
     ]
 )
