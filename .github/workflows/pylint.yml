@@ -1,4 +1,4 @@
-name: Trafficstat post commit steps
+name: Database monitor post commit steps
 on: [push]
 jobs:
   build:
@@ -11,4 +11,4 @@ jobs:
       - name: Tox
         run: |
           pip install tox
-          tox -- --email_username ${{ secrets.email_username }} --email_password ${{ secrets.email_password }}
+          tox -- --email_username ${{ secrets.email_username }} --email_password ${{ secrets.email_password }} --smtp_server smtp.gmail.com --pop_server pop.gmail.com

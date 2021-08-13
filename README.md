@@ -50,6 +50,6 @@ This is designed to work with a scheduled task or cron job to regularly check fo
 ## Testing
 To run the test suite, run:
 
-`python -m tox -e py39 -- --email_username bcdotnotifications@gmail.com --email_password eV^5d97%`
+`python -m tox -e py39 -- --email_username bcdotnotifications@gmail.com --email_password eV^5d97% --smtp_server smtp.gmail.com --pop_server pop.gmail.com`
 
 The same username/password is used for the SMTP server (to send email) and for the POP server (to check the email was received)

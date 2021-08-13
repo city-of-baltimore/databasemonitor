@@ -1,10 +1,6 @@
-"""Main driver code for dbmonitor"""
-import argparse
-from typing import List
+"""Configuration file for each database"""
 
-from dbmonitor import ConfigType, DBMonitor
-
-config: List[ConfigType] = [
+config = [
     # dataflow runs daily at 12am +4 hours
     {
         'table_name': 'acrs_crash',
@@ -77,20 +73,3 @@ config: List[ConfigType] = [
         'notification_mins': 2880  # 48 hours
     },
 ]
-
-parser = argparse.ArgumentParser(description='Monitors databases and sends a notification email if there have not been '
-                                             'recent enough updates')
-parser.add_argument('-e', '--email_address', required=True,
-                    help='Email address to use to authenticate to the SMTP server and the source email address of '
-                         'notification emails.')
-parser.add_argument('-p', '--email_password',
-                    help='Email password for the --emailaddress. If not provided, then the SMTP server wont be given '
-                         'creds')
-parser.add_argument('-m', '--smtp_server', required=True, help='The SMTP server to use for sending notification emails')
-parser.add_argument('-c', '--conn_str', required=True, help='Custom database connection string')
-parser.add_argument('-s', '--secure', action='store_true', help='Use SMTPS instead of SMTP')
-
-args = parser.parse_args()
-
-cls = DBMonitor(args.conn_str, args.email_address, args.email_password, args.smtp_server, args.secure)
-cls.check(config)
